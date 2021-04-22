@@ -87,8 +87,8 @@ public:
 
 private:
     lua_State* state = nullptr;
-    Array<kv::lua::MidiBufferImpl**> buffers;
-    Array<int> refs;
+    std::vector<kv::lua::MidiBufferImpl**> buffers;
+    std::vector<int> refs;
     int used { 0 };
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LuaMidiPipe);
 };

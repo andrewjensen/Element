@@ -100,18 +100,15 @@ void MidiPipe::clear (int channel, int startSample, int numSamples)
 LuaMidiPipe::LuaMidiPipe() {}
 LuaMidiPipe::~LuaMidiPipe()
 {
-    for (int i = refs.size(); --i >= 0;)
-    {
-        luaL_unref (state, LUA_REGISTRYINDEX, refs [i]);
-        refs.remove (i); buffers.remove (i);
-    }
-
+    for (auto ref : refs)
+        luaL_unref (state, LUA_REGISTRYINDEX, ref);
+    refs.clear();
     this->state = nullptr;
 }
 
 LuaMidiPipe** LuaMidiPipe::create (lua_State* L, int numReserved)
 {
-    auto** pipe = kv::lua::new_userdata <LuaMidiPipe> (L, "el.MidiPipe");
+    auto pipe = kv::lua::new_userdata <LuaMidiPipe> (L, "el.MidiPipe");
     (*pipe)->state = L;
     (*pipe)->setSize (numReserved);
     (*pipe)->used = 0;
@@ -122,10 +119,15 @@ void LuaMidiPipe::setSize (int newsize)
 {
     newsize = jmax (0, newsize);
 
-    while (buffers.size() < newsize)
+    if (used != newsize)
     {
-        buffers.add (kv::lua::new_midibuffer (state));
-        refs.add (luaL_ref (state, LUA_REGISTRYINDEX));
+        refs.reserve (newsize);
+        buffers.reserve (newsize);
+        while (buffers.size() < newsize)
+        {
+            buffers.emplace_back (kv::lua::new_midibuffer (state));
+            refs.emplace_back (luaL_ref (state, LUA_REGISTRYINDEX));
+        }
     }
 
     used = newsize;
@@ -133,31 +135,26 @@ void LuaMidiPipe::setSize (int newsize)
 
 const MidiBuffer* const LuaMidiPipe::getReadBuffer (int index) const
 {
-    return &(**buffers.getUnchecked(index)).buffer;
+    return &(**buffers[index]).buffer;
 }
 
 MidiBuffer* LuaMidiPipe::getWriteBuffer (int index) const
 {
-    return &(**buffers.getUnchecked(index)).buffer;
+    return &(**buffers[index]).buffer;
 }
 
 void LuaMidiPipe::swapWith (MidiPipe& pipe)
 {
     setSize (pipe.getNumBuffers());
     for (int i = pipe.getNumBuffers(); --i >= 0;)
-    {
-        pipe.getWriteBuffer(i)->swapWith (
-            (*buffers.getUnchecked(i))->buffer
-        );
-    }
+        pipe.getWriteBuffer(i)->swapWith ((**buffers[i]).buffer);
 }
 
 //==============================================================================
 int LuaMidiPipe::get (lua_State* L)
 {
     auto* pipe = *(LuaMidiPipe**) lua_touserdata (L, 1);
-    lua_rawgeti (L, LUA_REGISTRYINDEX, pipe->refs.getUnchecked (
-        static_cast<int> (lua_tointeger (L, 2))));
+    lua_rawgeti (L, LUA_REGISTRYINDEX, pipe->refs [lua_tointeger (L, 2) - 1]);
     return 1;
 }
 
@@ -165,6 +162,7 @@ int LuaMidiPipe::resize (lua_State* L)
 {
     auto* pipe = *(LuaMidiPipe**) lua_touserdata (L, 1);
     pipe->setSize (static_cast<int> (lua_tointeger (L, 2)));
+    lua_pushinteger (L, pipe->used);
     return 0;
 }
 
@@ -179,7 +177,7 @@ int LuaMidiPipe::clear (lua_State* L)
 {
     auto* pipe = *(LuaMidiPipe**) lua_touserdata (L, 1);
     for (int i = pipe->buffers.size(); --i >= 0;)
-        (**pipe->buffers.getUnchecked(i)).buffer.clear();
+        pipe->getWriteBuffer(i)->clear();
     return 0;
 }
 
@@ -194,9 +192,12 @@ static int midipipe_new (lua_State* L)
 }
 
 static int midipipe_gc (lua_State* L) {
-    auto** pipe = (Element::LuaMidiPipe**) lua_touserdata (L, 1);
+    auto pipe = (Element::LuaMidiPipe**) lua_touserdata (L, 1);
     if (nullptr != *pipe)
-        deleteAndZero (*pipe);
+    {
+        delete *pipe;
+        *pipe = nullptr;
+    }
     return 0;
 }
 
