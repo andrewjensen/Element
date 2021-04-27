@@ -30,6 +30,7 @@
 #define EL_INTERNAL_ID_COMPRESSOR               "element.compressor"
 #define EL_INTERNAL_ID_EQ_FILTER                "element.eqfilt"
 #define EL_INTERNAL_ID_FREQ_SPLITTER            "element.freqsplit"
+#define EL_INTERNAL_ID_GATE                     "element.gate"
 #define EL_INTERNAL_ID_MEDIA_PLAYER             "element.mediaPlayer"
 #define EL_INTERNAL_ID_MIDI_CHANNEL_MAP         "element.midiChannelMap"
 #define EL_INTERNAL_ID_MIDI_INPUT_DEVICE        "element.midiInputDevice"
@@ -80,3 +81,4 @@
 #define EL_INTERNAL_UID_SCRIPT                   1024
 #define EL_INTERNAL_UID_ALLPASS_FILTER           1025
 #define EL_INTERNAL_UID_VOLUME                   1026
+#define EL_INTERNAL_UID_GATE                     1027

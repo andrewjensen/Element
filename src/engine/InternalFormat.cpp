@@ -27,6 +27,7 @@
 #include "engine/nodes/CompressorProcessor.h"
 #include "engine/nodes/EQFilterProcessor.h"
 #include "engine/nodes/FreqSplitterProcessor.h"
+#include "engine/nodes/GateProcessor.h"
 #include "engine/nodes/LuaNode.h"
 #include "engine/nodes/MediaPlayerProcessor.h"
 #include "engine/nodes/MidiChannelMapProcessor.h"
@@ -190,6 +191,11 @@ void ElementAudioPluginFormat::findAllTypesForFile (OwnedArray <PluginDescriptio
         auto* desc = ds.add (new PluginDescription());
         FreqSplitterProcessor().fillInPluginDescription (*desc);
     }
+    else if (fileOrId == EL_INTERNAL_ID_GATE)
+    {
+        auto* desc = ds.add (new PluginDescription());
+        GateProcessor().fillInPluginDescription (*desc);
+    }
     else if (fileOrId == EL_INTERNAL_ID_COMPRESSOR)
     {
         auto* desc = ds.add (new PluginDescription());
@@ -234,6 +240,7 @@ StringArray ElementAudioPluginFormat::searchPathsForPlugins (const FileSearchPat
     results.add (EL_INTERNAL_ID_COMPRESSOR);
     results.add (EL_INTERNAL_ID_EQ_FILTER);
     results.add (EL_INTERNAL_ID_FREQ_SPLITTER);
+    results.add (EL_INTERNAL_ID_GATE);
     results.add (EL_INTERNAL_ID_ALLPASS_FILTER);
     results.add (EL_INTERNAL_ID_VOLUME);
     results.add (EL_INTERNAL_ID_WET_DRY);
@@ -272,6 +279,8 @@ AudioPluginInstance* ElementAudioPluginFormat::instantiatePlugin (const PluginDe
         base = new EQFilterProcessor();
     else if (desc.fileOrIdentifier == EL_INTERNAL_ID_FREQ_SPLITTER)
         base = new FreqSplitterProcessor();
+    else if (desc.fileOrIdentifier == EL_INTERNAL_ID_GATE)
+        base = new GateProcessor();
     else if (desc.fileOrIdentifier == EL_INTERNAL_ID_COMPRESSOR)
         base = new CompressorProcessor();
     else if (desc.fileOrIdentifier == EL_INTERNAL_ID_AUDIO_MIXER)
